@@ -4,9 +4,12 @@ The aim of this project is to study the open source implementation of direct sol
 This project is the implementation of the following assigment. [Click here](https://github.com/davidepietrasanta/Direct-methods-for-sparse-matrices-/blob/main/MCS-progetto-1.pdf)
 
 We want to compare MATLAB with three other programming languages: 
-##Python
+
+## Python
 `Unknown library`
-##C++
+
+## C++
 `Unknown library`
-##R
+
+## R
 `Unknown library`
