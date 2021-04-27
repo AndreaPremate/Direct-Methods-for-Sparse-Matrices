@@ -5,8 +5,8 @@ This project is the implementation of the following assigment. [Click here](http
 
 We want to compare MATLAB with three other programming languages: 
 
-## Python
-`Unknown library`
+## Python 
+For Python we have decided to use the `SciPy` library.
 
 ## C++
 `Unknown library`
