@@ -38,3 +38,11 @@ print(object.size(ns3Da), units="Mb")
 cat("GT01R memory usage: ")
 print(object.size(gt01r), units="Mb")
 
+# Solving Matrices ---------------------------------------------------------------
+# Compute B (such that the exact solution of Ax=b is xe=[1,1,..])
+a <- gt01r
+xe <- rep(1,nrow(a))
+b <- a*xe
+
+# Solve Ax=b
+x <- solve(a,b)
