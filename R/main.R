@@ -6,17 +6,35 @@
 # Packages ----------------------------------------------------------------------
 install.packages("pacman")
 library(pacman)
-pacman::p_load(here, Matrix)
+pacman::p_load(here, parallel, MASS, Matrix)
 
 # Reading Matrices (mtx) ---------------------------------------------------------
-bundleAdj <- readMM('matrices/positive/bundle_adj.mtx')
-g3Circuit <- readMM('matrices/positive/G3_circuit.mtx')
-hook1498 <- readMM('matrices/positive/Hook_1498.mtx')
+hook_1498 <- readMM('matrices/positive/Hook_1498.mtx')
+g3_circuit <- readMM('matrices/positive/G3_circuit.mtx')
 nd24k <- readMM('matrices/positive/nd24k.mtx')
-# The matrices are already in sparse format so they do not need to be converted.
+bundle_adj <- readMM('matrices/positive/bundle_adj.mtx')
+ifiss_mat <- readMM('matrices/non_positive/ifiss_mat.mtx')
+tsc_opf_1047 <- readMM('matrices/non_positive/tsc_opf_1047.mtx')
+ns3Da <- readMM('matrices/non_positive/ns3Da.mtx')
+gt01r <- readMM('matrices/non_positive/gt01r.mtx')
+# matrices are already in sparse format so they don't need to be converted
 
-# Memory (RAM) required from every matrix
-object.size(bundleAdj)
-object.size(g3Circuit)
-object.size(hook1498)
-object.size(nd24k)
+# Memory (RAM) occupied by each matrix
+cat("\n==================================================\n")
+cat("Hook_1498 memory usage: ")
+print(object.size(hook_1498), units="Mb")
+cat("G3_circuit memory usage: ")
+print(object.size(g3_circuit), units="Mb")
+cat("nd24k memory usage: ")
+print(object.size(nd24k), units="Mb")
+cat("bundle_adj memory usage: ")
+print(object.size(bundle_adj), units="Mb")
+cat("ifiss_mat memory usage: ")
+print(object.size(ifiss_mat), units="Mb")
+cat("TSC_OPF_1047 memory usage: ")
+print(object.size(tsc_opf_1047), units="Mb")
+cat("ns3Da memory usage: ")
+print(object.size(ns3Da), units="Mb")
+cat("GT01R memory usage: ")
+print(object.size(gt01r), units="Mb")
+
