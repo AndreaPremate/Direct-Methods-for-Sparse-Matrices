@@ -25,7 +25,9 @@ Matrice_input('TSC_OPF_1047.mat', 'TSC_OPF_1047.txt');
 fprintf('TSC_OPF_1047 \n');
 
 function res = Matrice_input(name_matrix, name_save_file)
+    tic;
     load(name_matrix);
+    time_load = toc;
     A = Problem.A;
     xe = ones(size(A,1),1);
     b = A*xe;
@@ -33,7 +35,7 @@ function res = Matrice_input(name_matrix, name_save_file)
     xe_approx = A\b;
     time = toc;
     err = norm(xe - xe_approx)/ norm(xe);
-    res = [time, err];
+    res = [time_load, time, err];
     file = fopen( name_save_file, 'wt' );
     writematrix(res,name_save_file);
     fclose(file);
