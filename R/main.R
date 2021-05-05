@@ -65,7 +65,9 @@ cat("Solve function execution time: \n")
 execution_time
 
 #relative error
-
+cat("Solve function execution time: \n")
+relative_error <- norm(x-xe, "2")/norm(xe, "2")
+relative_error
 
 #solution
 
