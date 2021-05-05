@@ -5,7 +5,7 @@
 
 # Packages ----------------------------------------------------------------------
 #package names
-packages <- c("here","stringr","pryr","Matrix")
+packages <- c("here","stringr","pryr","peakRAM","Matrix")
 # install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
@@ -38,11 +38,11 @@ gt01r <- readMM('matrices/non_positive/gt01r.mtx')
 #print(object.size(bundle_adj), units="Mb")
 #cat("ifiss_mat memory usage: ")
 #print(object.size(ifiss_mat), units="Mb")
-#cat("TSC_OPF_1047 memory usage: ")
+#cat("TSC_OPF_1047 size: ")
 #print(object.size(tsc_opf_1047), units="Mb")
-#cat("ns3Da memory usage: ")
+#cat("ns3Da memory size: ")
 #print(object.size(ns3Da), units="Mb")
-cat("GT01R memory usage: ")
+cat("GT01R memory size: ")
 print(object_size(gt01r))
 
 # Solving Matrices ---------------------------------------------------------------
@@ -54,14 +54,14 @@ b <- A*xe
 
 # Solve Ax=b
 start_time <- proc.time()
-x <- solve(A, b)
+ram_used <- peakRAM(x <- solve(A, b))
 execution_time <- proc.time()-start_time
 
 # Metrics ------------------------------------------------------------------------
 cat("\n==================================================\n")
 
 #time (rbenchmark/microbenchmart not used because executions can last over 5 minute)
-cat("Solve function execution time: ")
+cat("Solve function execution time: \n")
 execution_time
 
 #relative error
@@ -71,3 +71,6 @@ execution_time
 
 
 #memory usage
+cat("Solve function RAM used (MiB): ")
+ram_used$Peak_RAM_Used_MiB
+
