@@ -53,17 +53,21 @@ xe <- rep(1,nrow(A))
 b <- A*xe
 
 # Solve Ax=b
-start_time <- Sys.time()
+start_time <- proc.time()
 x <- solve(A, b)
-end_time <- Sys.time()
+execution_time <- proc.time()-start_time
 
 # Metrics ------------------------------------------------------------------------
 cat("\n==================================================\n")
-#time
-cat("Execution time: ")
-#execution_time <- end_time-start_time
-#execution_time
+
+#time (rbenchmark/microbenchmart not used because executions can last over 5 minute)
+cat("Solve function execution time: ")
+execution_time
+
 #relative error
 
+
 #solution
+
+
 #memory usage
