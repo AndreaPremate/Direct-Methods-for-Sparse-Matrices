@@ -5,7 +5,8 @@
 
 # Packages ----------------------------------------------------------------------
 #package names
-packages <- c("here","stringr","pryr","peakRAM","Matrix")
+packages <- c("here","stringr","pryr","peakRAM","parallel", "doSNOW", "Matrix")
+options(warn=-1)
 # install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
@@ -13,38 +14,61 @@ if (any(installed_packages == FALSE)) {
 }
 # load packages
 invisible(lapply(packages, library, character.only = TRUE))
-cat("\n==================================================\n")
 
 # Reading Matrices (mtx) ---------------------------------------------------------
-#hook_1498 <- readMM('matrices/positive/Hook_1498.mtx')
-#g3_circuit <- readMM('matrices/positive/G3_circuit.mtx')
-#nd24k <- readMM('matrices/positive/nd24k.mtx')
-#bundle_adj <- readMM('matrices/positive/bundle_adj.mtx')
-#ifiss_mat <- readMM('matrices/non_positive/ifiss_mat.mtx')
-#tsc_opf_1047 <- readMM('matrices/non_positive/tsc_opf_1047.mtx')
-#ns3Da <- readMM('matrices/non_positive/ns3Da.mtx')
-gt01r <- readMM('matrices/non_positive/gt01r.mtx')
-# matrices are already in sparse format so they don't need to be converted
+cat("\n==================================================\n")
 
+load_matrices <- function(){
+  cl <- parallel::makeCluster(num_cores, setup_strategy = "sequential")
+  doParallel:: registerDoParallel(cl)
 
-# Memory size of each matrix
-#cat("\n==================================================\n")
-#cat("Hook_1498 memory usage: ")
-#print(object.size(hook_1498), units="Mb")
-#cat("G3_circuit memory usage: ")
-#print(object.size(g3_circuit), units="Mb")
-#cat("nd24k memory usage: ")
-#print(object.size(nd24k), units="Mb")
-#cat("bundle_adj memory usage: ")
-#print(object.size(bundle_adj), units="Mb")
-#cat("ifiss_mat memory usage: ")
-#print(object.size(ifiss_mat), units="Mb")
-#cat("TSC_OPF_1047 size: ")
-#print(object.size(tsc_opf_1047), units="Mb")
-#cat("ns3Da memory size: ")
-#print(object.size(ns3Da), units="Mb")
-cat("GT01R memory size: ")
-print(object_size(gt01r))
+  hook_1498 <- readMM('matrices/positive/Hook_1498.mtx')
+  g3_circuit <- readMM('matrices/positive/G3_circuit.mtx')
+  nd24k <- readMM('matrices/positive/nd24k.mtx')
+  bundle_adj <- readMM('matrices/positive/bundle_adj.mtx')
+  ifiss_mat <- readMM('matrices/non_positive/ifiss_mat.mtx')
+  tsc_opf_1047 <- readMM('matrices/non_positive/tsc_opf_1047.mtx')
+  ns3Da <- readMM('matrices/non_positive/ns3Da.mtx')
+  gt01r <- readMM('matrices/non_positive/gt01r.mtx')
+  # matrices are already in sparse format so they don't need to be converted
+
+  parallel::stopCluster(cl)
+}
+load_matrices()
+
+# data preparation for loops
+matrices <- c("hook_1498", "g3_circuit", "nd24k", "bundle_adj", "ifiss_mat", "tsc_opf_1047", "ns3Da", "gt01r")
+n_matrices <- length(matrices)
+num_cores <- detectCores()-1
+
+# Memory size of each matrix (multicore mode)
+#for(i in 1:n_matrices){
+#  cat(matrices[i], "memory size: ")
+#  matrix<-get(matrices[i])
+#  print(object_size(matrix))
+#}
+
+#read_matrices <- function(input_matrices, i){
+#  #cat(input_matrices[i], "memory size: ")
+#  matrix<-get(input_matrices[i])
+#  print(object_size(matrix))
+#}
+#mclapply(n_matrices, read_matrices(matrices, i), mc.cores = num_cores)
+
+read_matrices <- function(input_matrices, num_matrices){
+  cl <- parallel::makeCluster(num_cores, setup_strategy = "sequential")
+  doParallel:: registerDoParallel(cl)
+
+  for(i in 1:num_matrices){
+  cat(input_matrices[i], "memory size: ")
+  matrix<-get(input_matrices[i])
+  print(object_size(matrix))
+  }
+
+  parallel::stopCluster(cl)
+}
+read_matrices(matrices, n_matrices)
+
 
 # Solving Matrices ---------------------------------------------------------------
 
@@ -67,9 +91,9 @@ cat(execution_time[["elapsed"]], "\n")
 # elapsed time = CPU execution time + external processes (OS)
 
 # relative error
-cat("Relative Error (norm2): ")
-relative_error <- norm(x-xe, "2")/norm(xe, "2")
-cat(relative_error, "\n")
+#cat("Relative Error (norm2): ")
+#relative_error <- norm(x-xe, "2")/norm(xe, "2")
+#cat(relative_error, "\n")
 
 # RAM used
 cat("RAM used (MiB): ")
