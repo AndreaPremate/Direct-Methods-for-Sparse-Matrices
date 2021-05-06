@@ -26,7 +26,8 @@ cat("\n==================================================\n")
 gt01r <- readMM('matrices/non_positive/gt01r.mtx')
 # matrices are already in sparse format so they don't need to be converted
 
-# Memory (RAM) occupied by each matrix
+
+# Memory size of each matrix
 #cat("\n==================================================\n")
 #cat("Hook_1498 memory usage: ")
 #print(object.size(hook_1498), units="Mb")
@@ -46,13 +47,13 @@ cat("GT01R memory size: ")
 print(object_size(gt01r))
 
 # Solving Matrices ---------------------------------------------------------------
-# Compute B (such that the exact solution of Ax=b is xe=[1,1,..])
 
+# compute B (such that the exact solution of Ax=b is xe=[1,1,..])
 A <- gt01r
 xe <- rep(1,nrow(A))
 b <- A*xe
 
-# Solve Ax=b
+# solve Ax=b
 start_time <- proc.time()
 ram_used <- peakRAM(x <- solve(A, b))
 execution_time <- proc.time()-start_time
@@ -60,19 +61,19 @@ execution_time <- proc.time()-start_time
 # Metrics ------------------------------------------------------------------------
 cat("\n==================================================\n")
 
-#time (rbenchmark/microbenchmart not used because executions can last over 5 minute)
-cat("Solve function execution time: \n")
-execution_time
+# time (rbenchmark/microbenchmart not used because executions can last over 5 minute)
+cat("Execution Time (sec): ")
+cat(execution_time[["elapsed"]], "\n")
+# elapsed time = CPU execution time + external processes (OS)
 
-#relative error
-cat("Solve function execution time: \n")
+# relative error
+cat("Relative Error (norm2): ")
 relative_error <- norm(x-xe, "2")/norm(xe, "2")
-relative_error
+cat(relative_error, "\n")
 
-#solution
+# RAM used
+cat("RAM used (MiB): ")
+cat(ram_used$Peak_RAM_Used_MiB, "\n")
+# I do not extract the elapsed time of this function because it does not consider the time that elapses between the external processes of the OS (it considers only CPU execution time)
 
-
-#memory usage
-cat("Solve function RAM used (MiB): ")
-ram_used$Peak_RAM_Used_MiB
 
