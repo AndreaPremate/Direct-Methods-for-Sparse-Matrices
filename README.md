@@ -12,4 +12,4 @@ For Python we have decided to use the `SciPy` library.
 `Unknown library`
 
 ## R
-For R we have decided to use the `Matrix` library.
+For R we have decided to use the `SparseM` library.

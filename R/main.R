@@ -5,7 +5,7 @@
 
 # Packages ----------------------------------------------------------------------
 #package names
-packages <- c("here","stringr","pryr","peakRAM","parallel","doSNOW","Matrix","spam","spam64")
+packages <- c("here","stringr","pryr","peakRAM","Matrix","SparseM")
 options(warn=-1)
 # install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -17,7 +17,7 @@ invisible(lapply(packages, library, character.only = TRUE))
 
 # Reading Matrices (mtx) multicore version ---------------------------------------
 
-matrices_dir <- "matrices/positive/test_matrix/" #matrices directory
+matrices_dir <- "matrices/positive/" #matrices directory
 list_matrices_mtx <- list.files(path=matrices_dir, pattern=".mtx$") #list of .mtx files in the directory
 list_matrices <- sub(".mtx$", "", list_matrices_mtx) #matrices names for loop purpose
 num_matrices <- length(list_matrices) #number of matrices for loop purpose
@@ -34,7 +34,7 @@ for (i in 1:num_matrices){
     matrix_loading_time <- proc.time()-start_loading_time
     assign(paste0(matrix_name), matrix_read)
 
-    cat("\n Memory size: ")
+    cat("\n Memory size (Bytes): ")
     cat(object_size(matrix_read))
     cat("\n Loading time (s): ")
     cat(matrix_loading_time[["elapsed"]])
@@ -59,7 +59,7 @@ for(i in 1:num_matrices){
 
   # solve Ax=b
   start_time <- proc.time()
-  ram_used <- peakRAM(x <- solve(A, b))
+  ram_used <- peakRAM(x <- SparseM::solve(A, b))
   execution_time <- proc.time()-start_time
 
   # time (sec)
@@ -67,7 +67,7 @@ for(i in 1:num_matrices){
   cat("\n Execution Time (s): ", time)
 
   # relative error (norm2)
-  relative_error <- norm(x-xe, type= "2")/norm(xe, type="2")
+  relative_error <- norm(x-xe,"2")/norm(xe,"2")
   cat("\n Relative Error (norm2): ", relative_error)
 
   # Peak RAM used (MiB)
