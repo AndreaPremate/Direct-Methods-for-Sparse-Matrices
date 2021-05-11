@@ -16,7 +16,6 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # Reading Matrices (mtx) multicore version ---------------------------------------
-cat("\n==================================================\n")
 
 matrices_dir <- "matrices/positive/test_matrix/" #matrices directory
 list_matrices_mtx <- list.files(path=matrices_dir, pattern=".mtx$") #list of .mtx files in the directory
@@ -24,23 +23,34 @@ list_matrices <- sub(".mtx$", "", list_matrices_mtx) #matrices names for loop pu
 num_matrices <- length(list_matrices) #number of matrices for loop purpose
 
 # Matrix reading loop (automatic name generation and matrix assignation)
+cat("\n\nReading matrices...\n")
 for (i in 1:num_matrices){
+    cat("\n==================================================\n")
+    cat("Reading", list_matrices[i], "matrix:")
     matrix_name <- sub(".mtx$", "", list_matrices_mtx[i])
     matrix_dir <- paste0(matrices_dir, list_matrices_mtx[i], sep="")
+    start_loading_time <- proc.time()
     matrix_read <- readMM(matrix_dir)
+    matrix_loading_time <- proc.time()-start_loading_time
     assign(paste0(matrix_name), matrix_read)
-    cat(matrix_name, "memory size: ")
-    print(object_size(matrix_read))
+
+    cat("\n Memory size: ")
+    cat(object_size(matrix_read))
+    cat("\n Loading time (s): ")
+    cat(matrix_loading_time[["elapsed"]])
 }
+cat("\n==================================================")
+cat("\n\nMatrices reading finished!")
 
 # Data preparation for loops
 results <- data.frame(df_matrix=character(), df_time=double(), df_relative_error=double(), df_ram=double())
 
-# Solving Matrices ---------------------------------------------------------------
 
+# Solving Matrices ---------------------------------------------------------------
+cat("\n\nSolving matrices...\n")
 for(i in 1:num_matrices){
-  cat("\n\n==================================================\n")
-  cat("Solving", list_matrices[i], "matrix :")
+  cat("\n==================================================\n")
+  cat("Solving", list_matrices[i], "matrix:")
 
   # compute B (such that the exact solution of Ax=b is xe=[1,1,..])
   A <- get(list_matrices[i])
@@ -68,8 +78,11 @@ for(i in 1:num_matrices){
   result_matrix <- list(df_matrix=list_matrices[i], df_time=time, df_relative_error=relative_error, df_ram=ram)
   results <- rbind(results, result_matrix, stringsAsFactors = FALSE)
 }
+cat("\n==================================================")
+cat("\n\nMatrices solving finished!")
 
 # Metrics CSV output -------------------------------------------------------------
 
 results_dir <- "R/results/"
 write.csv(results, file.path(results_dir, "results.csv"), row.names = FALSE)
+cat("\n\nResults CSV file written!")
