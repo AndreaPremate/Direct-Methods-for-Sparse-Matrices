@@ -21,6 +21,7 @@ matrix_solving_results <- data.frame(df_matrix=character(), df_time=double(), df
 
 # Reading Matrices (mtx) ---------------------------------------------------------
 matrices_dir <- "matrices/positive/" #matrices directory
+results_dir <- "R/results/" #results directory
 list_matrices_mtx <- list.files(path=matrices_dir, pattern=".mtx$") #list of .mtx files in the directory
 list_matrices <- sub(".mtx$", "", list_matrices_mtx) #matrices names for loop purpose
 num_matrices <- length(list_matrices) #number of matrices for loop purpose
@@ -85,7 +86,6 @@ cat("\n==================================================")
 cat("\n\nMatrices solving finished!")
 
 # Metrics CSV output -------------------------------------------------------------
-results_dir <- "R/results/"
 write.csv(matrix_reading_results, file.path(results_dir, "matrix_reading_results.csv"), row.names = FALSE)
 write.csv(matrix_solving_results, file.path(results_dir, "matrix_solving_results.csv"), row.names = FALSE)
 cat("\n\nResults CSV file written!")
