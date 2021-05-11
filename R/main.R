@@ -5,7 +5,7 @@
 
 # Packages ----------------------------------------------------------------------
 #package names
-packages <- c("here","stringr","pryr","peakRAM","parallel", "doSNOW", "Matrix")
+packages <- c("here","stringr","pryr","peakRAM","parallel","doSNOW","Matrix","spam","spam64")
 options(warn=-1)
 # install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -15,75 +15,61 @@ if (any(installed_packages == FALSE)) {
 # load packages
 invisible(lapply(packages, library, character.only = TRUE))
 
-# Reading Matrices (mtx) ---------------------------------------------------------
+# Reading Matrices (mtx) multicore version ---------------------------------------
 cat("\n==================================================\n")
 
-hook_1498 <- readMM('matrices/positive/Hook_1498.mtx')
-g3_circuit <- readMM('matrices/positive/G3_circuit.mtx')
-nd24k <- readMM('matrices/positive/nd24k.mtx')
-bundle_adj <- readMM('matrices/positive/bundle_adj.mtx')
-ifiss_mat <- readMM('matrices/non_positive/ifiss_mat.mtx')
-tsc_opf_1047 <- readMM('matrices/non_positive/tsc_opf_1047.mtx')
-ns3Da <- readMM('matrices/non_positive/ns3Da.mtx')
-gt01r <- readMM('matrices/non_positive/gt01r.mtx')
-# matrices are already in sparse format so they don't need to be converted
+matrices_dir <- "matrices/positive/test_matrix/" #matrices directory
+list_matrices_mtx <- list.files(path=matrices_dir, pattern=".mtx$") #list of .mtx files in the directory
+list_matrices <- sub(".mtx$", "", list_matrices_mtx) #matrices names for loop purpose
+num_matrices <- length(list_matrices) #number of matrices for loop purpose
 
-# data preparation for loops
-matrices <- c("hook_1498", "g3_circuit", "nd24k", "bundle_adj", "ifiss_mat", "tsc_opf_1047", "ns3Da", "gt01r")
-n_matrices <- length(matrices)
-num_cores <- detectCores()-1
-
-# Memory size of each matrix (multicore mode)
-#for(i in 1:n_matrices){
-#  cat(matrices[i], "memory size: ")
-#  matrix<-get(matrices[i])
-#  print(object_size(matrix))
-#}
-
-read_matrices <- function(input_matrices, num_matrices){
-  cl <- parallel::makeCluster(num_cores, setup_strategy = "sequential")
-  doParallel:: registerDoParallel(cl)
-
-  for(i in 1:num_matrices){
-  cat(input_matrices[i], "memory size: ")
-  matrix<-get(input_matrices[i])
-  print(object_size(matrix))
-  }
-
-  parallel::stopCluster(cl)
+# Matrix reading loop (automatic name generation and matrix assignation)
+for (i in 1:num_matrices){
+    matrix_name <- sub(".mtx$", "", list_matrices_mtx[i])
+    matrix_dir <- paste0(matrices_dir, list_matrices_mtx[i], sep="")
+    matrix_read <- readMM(matrix_dir)
+    assign(paste0(matrix_name), matrix_read)
+    cat(matrix_name, "memory size: ")
+    print(object_size(matrix_read))
 }
-read_matrices(matrices, n_matrices)
-# could mclapply be a better choice?
+
+# Data preparation for loops
+results <- data.frame(df_matrix=character(), df_time=double(), df_relative_error=double(), df_ram=double())
 
 # Solving Matrices ---------------------------------------------------------------
 
-# compute B (such that the exact solution of Ax=b is xe=[1,1,..])
-A <- gt01r
-xe <- rep(1,nrow(A))
-b <- A*xe
+for(i in 1:num_matrices){
+  cat("\n\n==================================================\n")
+  cat("Solving", list_matrices[i], "matrix :")
 
-# solve Ax=b
-start_time <- proc.time()
-ram_used <- peakRAM(x <- solve(A, b))
-execution_time <- proc.time()-start_time
+  # compute B (such that the exact solution of Ax=b is xe=[1,1,..])
+  A <- get(list_matrices[i])
+  xe <- rep(1,nrow(A))
+  b <- A %*% xe
 
-# Metrics CLI output -------------------------------------------------------------
-cat("\n==================================================\n \n")
+  # solve Ax=b
+  start_time <- proc.time()
+  ram_used <- peakRAM(x <- solve(A, b))
+  execution_time <- proc.time()-start_time
 
-# time (sec) (rbenchmark/microbenchmart not used because executions can last over 5 minute)
-time <- execution_time[["elapsed"]]
+  # time (sec)
+  time <- execution_time[["elapsed"]]
+  cat("\n Execution Time (s): ", time)
 
-# relative error (norm2)
-relative_error <- norm(x-xe, "2")/norm(xe, "2")
+  # relative error (norm2)
+  relative_error <- norm(x-xe, type= "2")/norm(xe, type="2")
+  cat("\n Relative Error (norm2): ", relative_error)
 
-# RAM used (MB)
-ram <- (ram_used$Total_RAM_Used_MiB)*(1.048576)
+  # Peak RAM used (MiB)
+  ram <- ram_used$Peak_RAM_Used_MiB
+  cat("\n RAM Used (MiB): ", ram)
 
-# Metrics CSV Output -------------------------------------------------------------
-results <- data.frame(df_matrix=character(), df_time=double(), df_relative_error=double(), df_ram=double())
-result_gt01r <- list(df_matrix="gt01r", df_time=time, df_relative_error=relative_error, df_ram=ram)
-results <- rbind(results, result_gt01r, stringsAsFactors = FALSE)
-results
+  # Results in dataframe
+  result_matrix <- list(df_matrix=list_matrices[i], df_time=time, df_relative_error=relative_error, df_ram=ram)
+  results <- rbind(results, result_matrix, stringsAsFactors = FALSE)
+}
 
-#path <- paste0(here("results"), "/")
-write.csv(results, here("r_results"), row.names = FALSE)
+# Metrics CSV output -------------------------------------------------------------
+
+results_dir <- "R/results/"
+write.csv(results, file.path(results_dir, "results.csv"), row.names = FALSE)
