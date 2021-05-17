@@ -9,7 +9,7 @@ We want to compare MATLAB with three other programming languages:
 For Python we have decided to use the `SciPy` library.
 
 ## C++
-`Unknown library`
+For C++ we have decided to use the `Eigen` library.
 
 ## R
 For R we have decided to use the `SparseM` library.
