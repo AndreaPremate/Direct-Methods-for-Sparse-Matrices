@@ -5,11 +5,13 @@
 
 # Packages ----------------------------------------------------------------------
 cat("\nInitializing the environment...")
-options(warn=-1)
+options(tryCatchLog.include.full.call.stack = FALSE)
+options(tryCatchLog.include.compact.call.stack = FALSE)
+options(spam.cholsymmetrycheck = FALSE) # no need to check symmetry during chol (due to pre-processing)
 suppressMessages({
   chooseCRANmirror(ind=1)
   #package names
-  packages <- c("here","bench","Matrix","SparseM")
+  packages <- c("here","bench","tryCatchLog","spam","spam64")
   # install packages not yet installed
   installed_packages <- packages %in% rownames(installed.packages())
   if (any(installed_packages == FALSE)) {
@@ -24,7 +26,7 @@ invisible(gc())
 
 # Variables initializaion --------------------------------------------------------
 cat("\nStarting the program...")
-matrices_dir <- "matrices/positive/a/" #matrices directory
+matrices_dir <- "matrices/positive/a/neg/" #matrices directory
 results_dir <- "R/results/" #results directory
 list_matrices_mtx <- list.files(path=matrices_dir, pattern=".mtx$") #list of .mtx files in the directory
 list_matrices <- sub(".mtx$", "", list_matrices_mtx) #matrices names for loop purpose
@@ -41,9 +43,9 @@ for (i in seq_along(list_matrices)){
   cat("Reading", list_matrices[i], "matrix:")
   matrix_name <- sub(".mtx$", "", list_matrices_mtx[i])
   matrix_dir <- paste0(matrices_dir, list_matrices_mtx[i])
-  matrix_read_benchmark <- mark(matrix_read <- readMM(matrix_dir)) #read.MM on mac doesn't work
+  matrix_read_benchmark <- mark(matrix_read <- read.MM(matrix_dir))
 
-  if (isSymmetric(matrix_read)){
+  if (isSymmetric.spam(matrix_read)){
     assign(paste0(matrix_name), matrix_read) #assign matrix to names
     cat("\n Matrix size (Bytes): ")
     matrix_size <- as.numeric(object.size(matrix_read))
@@ -62,10 +64,6 @@ for (i in seq_along(list_matrices)){
     cat("\n Matrix non-symmetrical!") #save index of non-symmetrical matrices
     non_sym_matrices[length(non_sym_matrices)+1] <- i
   }
-
-  # free memory (dealing with big matrix could generate memory errors)
-  rm(list=c("matrix_read","matrix_name","matrix_dir", "matrix_read_benchmark","matrix_size","matrix_allocation","matrix_load_time","matrix_reading_data"))
-  invisible(gc()) #called after rm as suggested in R documentation
 }
 
 cat("\n==================================================")
@@ -74,7 +72,7 @@ non_sym_matrices <- non_sym_matrices[!is.na(non_sym_matrices)]
 list_matrices <- list_matrices[-non_sym_matrices]
 cat("\nNon-symmetrical matrices deleted!")
 # free memory
-rm(list=c("list_matrices_mtx", "i"))
+rm(list=c("list_matrices_mtx", "i", "matrix_read","matrix_name","matrix_dir", "matrix_read_benchmark","matrix_size","matrix_allocation","matrix_load_time","matrix_reading_data"))
 invisible(gc()) #called after rm as suggested in R documentation
 cat("\n==================================================")
 cat("\nMatrices reading finished!")
@@ -83,33 +81,42 @@ cat("\nMatrices reading finished!")
 cat("\n\nSolving the matrices...")
 for(i in seq_along(list_matrices)){
   cat("\n==================================================\n")
-  cat("Solving", list_matrices[i], "matrix:")
+  cat("Solving", list_matrices[i], "matrix:\n")
 
-  # compute B (such that the exact solution of Ax=b is xe=[1,1,..])
+  # cholesky analysis
   A <- get(list_matrices[i])
-  xe <- rep(1,nrow(A))
-  b <- crossprod(A, xe)
+  positive_matrix_check <- tryCatchLog(
+    { R <- chol.spam(A) },
+    error=function(e){ cat("Matrix not-positive definite, deleted!") }
+  )
 
-  # solve Ax=b
-  x_benchmark <- mark(x <- SparseM::solve(A, b))
+  # solve positive matrix
+  if(inherits(positive_matrix_check, "error")){
+    xe <- rep(1,nrow(A))
+    b <- crossprod.spam(A, xe)
 
-  # time (sec)
-  time <- x_benchmark$total_time #time in s
-  conv_time <- time/60 #time in min
-  cat("\n Execution Time (min): ", conv_time)
-  # relative error (norm2)
-  relative_error <- norm(x-xe,"2")/norm(xe,"2")
-  cat("\n Relative Error (norm2): ", relative_error)
-  # RAM used (Bytes)
-  conv_ram <- as.numeric(x_benchmark$mem_alloc)
-  cat("\n RAM used (Bytes): ", conv_ram)
+    # solve Ax=b
+    x_benchmark <- mark(x <- solve.spam(R, b))
 
-  # Matrix solving results in dataframe
-  matrix_solving_data <- list(df_matrix=list_matrices[i], df_time=conv_time, df_relative_error=relative_error, df_peak_ram=conv_ram)
-  matrix_solving_results <- rbind(matrix_solving_results, matrix_solving_data, stringsAsFactors = FALSE)
+    # time (sec)
+    time <- x_benchmark$total_time #time in s
+    conv_time <- time/60 #time in min
+    cat(" Execution Time (min): ", conv_time)
+    # relative error (norm2)
+    relative_error <- norm(x-xe,"2")/norm(xe,"2")
+    cat("\n Relative Error (norm2): ", relative_error)
+    # RAM used (Bytes)
+    conv_ram <- as.numeric(x_benchmark$mem_alloc)
+    cat("\n RAM used (Bytes): ", conv_ram)
+
+    # Matrix solving results in dataframe
+    matrix_solving_data <- list(df_matrix=list_matrices[i], df_time=conv_time, df_relative_error=relative_error, df_peak_ram=conv_ram)
+    matrix_solving_results <- rbind(matrix_solving_results, matrix_solving_data, stringsAsFactors = FALSE)
+  }
 
   # free memory (dealing with big matrix could generate memory errors)
-  rm(list=c("A","xe","b","x_benchmark","time", "conv_time", "relative_error","conv_ram",list_matrices[i]))
+  suppressWarnings(
+     rm(list=c("A","xe","b","x_benchmark","time", "conv_time", "relative_error","conv_ram",list_matrices[i])))
   invisible(gc()) #called after rm as suggested in R documentation
 }
 cat("\n==================================================")
