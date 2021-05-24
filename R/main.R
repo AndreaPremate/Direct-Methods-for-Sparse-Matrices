@@ -7,11 +7,10 @@
 cat("\nInitializing the environment...")
 options(tryCatchLog.include.full.call.stack = FALSE)
 options(tryCatchLog.include.compact.call.stack = FALSE)
-options(spam.cholsymmetrycheck = FALSE) # no need to check symmetry during chol (due to pre-processing)
 suppressMessages({
   chooseCRANmirror(ind=1)
   #package names
-  packages <- c("here","bench","tryCatchLog","spam","spam64")
+  packages <- c("here","bench","tryCatchLog","Matrix")
   # install packages not yet installed
   installed_packages <- packages %in% rownames(installed.packages())
   if (any(installed_packages == FALSE)) {
@@ -24,15 +23,18 @@ suppressMessages({
 rm(list=c("packages", "installed_packages"))
 invisible(gc())
 
-# Variables initializaion --------------------------------------------------------
-cat("\nStarting the program...")
-matrices_dir <- "matrices/positive/a/neg/" #matrices directory
+# Variables initialization --------------------------------------------------------
+matrices_dir <- "matrices/positive/a/" #matrices directory
 results_dir <- "R/results/" #results directory
 list_matrices_mtx <- list.files(path=matrices_dir, pattern=".mtx$") #list of .mtx files in the directory
 list_matrices <- sub(".mtx$", "", list_matrices_mtx) #matrices names for loop purpose
 non_sym_matrices <- vector()
-matrix_reading_results <- data.frame(df_matrix=character(), df_loading_time=double(), df_matrix_size=double(), df_memory_allocation=double())
-matrix_solving_results <- data.frame(df_matrix=character(), df_time=double(), df_relative_error=double(), df_peak_ram=double())
+
+# CSV Initialization --------------------------------------------------------------
+mtx_read_1row <- data.frame("Matrix Name", "Loading Time", "Size", "Memory Allocation")
+write.table(mtx_read_1row, file.path(results_dir, "results_matrices_readed.csv"), sep=",", append=TRUE, quote=FALSE, row.names = FALSE, col.names=FALSE)
+mtx_solve_1row <- data.frame("Matrix Name", "Solving Time", "Relative Error", "Peak RAM")
+write.table(mtx_solve_1row, file.path(results_dir, "results_matrices_solved.csv"), sep=",", append=TRUE, quote=FALSE, row.names = FALSE, col.names=FALSE)
 
 # Matrices PRE-Processing (reading, non-symmetrical matrix deletion) -------------
 cat("\nReading the matrices...")
@@ -43,9 +45,9 @@ for (i in seq_along(list_matrices)){
   cat("Reading", list_matrices[i], "matrix:")
   matrix_name <- sub(".mtx$", "", list_matrices_mtx[i])
   matrix_dir <- paste0(matrices_dir, list_matrices_mtx[i])
-  matrix_read_benchmark <- mark(matrix_read <- read.MM(matrix_dir))
+  matrix_read_benchmark <- mark(as(matrix_read <- readMM(matrix_dir), "CsparseMatrix"))
 
-  if (isSymmetric.spam(matrix_read)){
+  if (isSymmetric(matrix_read)){
     assign(paste0(matrix_name), matrix_read) #assign matrix to names
     cat("\n Matrix size (Bytes): ")
     matrix_size <- as.numeric(object.size(matrix_read))
@@ -57,9 +59,10 @@ for (i in seq_along(list_matrices)){
     matrix_load_time <- matrix_read_benchmark$total_time #time in s
     cat(matrix_load_time)
 
-    # Matrix reading results in dataframe
-    matrix_reading_data <- list(df_matrix=list_matrices[i], df_loading_time=matrix_load_time, df_matrix_size=matrix_size, df_memory_allocation=matrix_allocation)
-    matrix_reading_results <- rbind(matrix_reading_results, matrix_reading_data, stringsAsFactors = FALSE)
+    # Matrix reading results in CSV
+    row <- data.frame(df_matrix=list_matrices[i], df_loading_time=matrix_load_time, df_matrix_size=matrix_size, df_memory_allocation=matrix_allocation)
+    write.table(row, file.path(results_dir, "results_matrices_readed.csv"), sep=",", append=TRUE, quote=FALSE, row.names = FALSE, col.names=FALSE)
+    cat("\nResults written in", paste0(results_dir,"results_matrices_readed.csv"))
   } else {
     cat("\n Matrix non-symmetrical!") #save index of non-symmetrical matrices
     non_sym_matrices[length(non_sym_matrices)+1] <- i
@@ -72,7 +75,7 @@ non_sym_matrices <- non_sym_matrices[!is.na(non_sym_matrices)]
 list_matrices <- list_matrices[-non_sym_matrices]
 cat("\nNon-symmetrical matrices deleted!")
 # free memory
-rm(list=c("list_matrices_mtx", "i", "matrix_read","matrix_name","matrix_dir", "matrix_read_benchmark","matrix_size","matrix_allocation","matrix_load_time","matrix_reading_data"))
+rm(list=c("list_matrices_mtx", "i", "matrix_read","matrix_name","matrix_dir", "matrix_read_benchmark","matrix_size","matrix_allocation","matrix_load_time"))
 invisible(gc()) #called after rm as suggested in R documentation
 cat("\n==================================================")
 cat("\nMatrices reading finished!")
@@ -86,17 +89,17 @@ for(i in seq_along(list_matrices)){
   # cholesky analysis
   A <- get(list_matrices[i])
   positive_matrix_check <- tryCatchLog(
-    { R <- chol.spam(A) },
+    { R <- chol(A) },
     error=function(e){ cat("Matrix not-positive definite, deleted!") }
   )
 
   # solve positive matrix
   if(inherits(positive_matrix_check, "error")){
     xe <- rep(1,nrow(A))
-    b <- crossprod.spam(A, xe)
+    b <- crossprod(A, xe)
 
     # solve Ax=b
-    x_benchmark <- mark(x <- solve.spam(R, b))
+    x_benchmark <- mark(x <- solve(R, b))
 
     # time (sec)
     time <- x_benchmark$total_time #time in s
@@ -110,8 +113,9 @@ for(i in seq_along(list_matrices)){
     cat("\n RAM used (Bytes): ", conv_ram)
 
     # Matrix solving results in dataframe
-    matrix_solving_data <- list(df_matrix=list_matrices[i], df_time=conv_time, df_relative_error=relative_error, df_peak_ram=conv_ram)
-    matrix_solving_results <- rbind(matrix_solving_results, matrix_solving_data, stringsAsFactors = FALSE)
+    row1 <- data.frame(df_matrix=list_matrices[i], df_time=conv_time, df_relative_error=relative_error, df_peak_ram=conv_ram)
+    write.table(row1, file.path(results_dir, "results_matrices_solved.csv"), sep=",", append=TRUE, quote=FALSE, row.names = FALSE, col.names=FALSE)
+    cat("\nResults written in", paste0(results_dir,"results_matrices_solved.csv"))
   }
 
   # free memory (dealing with big matrix could generate memory errors)
@@ -121,9 +125,3 @@ for(i in seq_along(list_matrices)){
 }
 cat("\n==================================================")
 cat("\nMatrices solving finished!")
-
-# Matrices POST-Processing (CSV writing) -----------------------------------------
-cat("\n\nWriting the results...")
-write.csv(matrix_reading_results, file.path(results_dir, "results_matrices_readed.csv"), row.names = FALSE)
-write.csv(matrix_solving_results, file.path(results_dir, "results_matrices_solved.csv"), row.names = FALSE)
-cat("\nResults written on CSV!")
