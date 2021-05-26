@@ -1,0 +1,3 @@
+Matrix Name,Cholesky Solving Time (s),x Solving Time (s),Total Solving Time (s),Relative Error,Peak RAM (Bytes)
+G3_circuit,201.383070005,1.56571215,202.948782155,8.00663635006339e-12,25367744
+bundle_adj,2.316667187,0.600970306999999,2.917637494,8.62677569923006e-06,8213712

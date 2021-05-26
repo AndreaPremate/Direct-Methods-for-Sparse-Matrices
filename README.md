@@ -12,4 +12,4 @@ For Python we have decided to use the `SciPy` library.
 For C++ we have decided to use the `Eigen-3.3.9` library.
 
 ## R
-For R we have decided to use the `SparseM` library.
+For R we have decided to use the `Matrix` library.
