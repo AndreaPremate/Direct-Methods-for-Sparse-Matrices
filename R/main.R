@@ -28,9 +28,7 @@ set.logging.functions( error.log.func = function(msg) invisible(),
 
 # Variables initialization
 matrices_dir <- "matrices/test/" #matrices directory
-list_matrices_mtx <- list.files(path=matrices_dir, pattern=".mtx$", full.names=TRUE) #list of .mtx files in the directory
-list_matrices_mtx <- sub(paste0(matrices_dir,"/"),"",
-                         list_matrices_mtx[match(seq_along(list_matrices_mtx), rank(file.info(list_matrices_mtx)$size))]) #order by size asc
+list_matrices_mtx <- list.files(path=matrices_dir, pattern=".mtx$") #list of .mtx files in the directory
 list_matrices <- sub(".mtx$", "", list_matrices_mtx) #matrices names for loop purpose
 results_dir <- "R/results/" #results directory
 results_read_csv <- file.path(results_dir, "results_read.csv")
