@@ -24,7 +24,8 @@ options(warn = -1) # clean output
 #Initializations ---------------------------------------------------------------
 
 # Variables initialization
-matrices_dir <- paste0(here(),"/matrices/a/") # set matrices directory
+# matrices_dir <- paste0(here(),"/matrices/") # set matrices directory
+matrices_dir <- "matrices/" # set matrices directory
 list_matrices_mtx <- list.files(path = matrices_dir, pattern = ".mtx$") # get list of .mtx files in the directory
 list_matrices <- sub(".mtx$", "", list_matrices_mtx) # get matrices names (for loop purpose)
 results_read_csv <- file.path("R/results/read.csv") # set results directory and file for read
