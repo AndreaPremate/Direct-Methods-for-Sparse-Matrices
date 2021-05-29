@@ -36,6 +36,8 @@ mtx_solve_1row <- data.frame("Matrix Name", "Cholesky Execution Time (s)", "x Ex
 # CSV Initialization
 invisible(file.remove(results_read_csv)) # reset csv files on every start
 invisible(file.remove(results_solve_csv)) # reset csv files on every start
+close(file(results_read_csv)) # close connection
+close(file(results_solve_csv)) # close connection
 write.table(mtx_read_1row, results_read_csv, sep = ",", append = TRUE, quote = FALSE, row.names = FALSE, col.names = FALSE)
 write.table(mtx_solve_1row, results_solve_csv, sep = ",", append = TRUE, quote = FALSE, row.names = FALSE, col.names = FALSE)
 rm(list = c("mtx_read_1row", "mtx_solve_1row")) # clean memory
@@ -44,6 +46,7 @@ close(file(results_read_csv)) # close connection
 close(file(results_solve_csv)) # close connection
 
 # Matrix Load and Solve ----------------------------------------------------------
+
 for (i in seq_along(list_matrices)) {
   # Matrix Read
   cat("\n==================================================\n")
