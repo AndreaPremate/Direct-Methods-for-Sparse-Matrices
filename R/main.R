@@ -8,7 +8,7 @@
 # https://cran.r-project.org/web/packages/here/index.html
 # https://cran.r-project.org/web/packages/Matrix/index.html
 # https://cran.r-project.org/web/packages/bench/index.html
-#
+
 suppressMessages({
   chooseCRANmirror(ind = 1) # select "Cloud" mirror
   packages <- c("here", "bench", "Matrix") # packages to be installed
@@ -24,7 +24,6 @@ options(warn = -1) # clean output
 #Initializations ---------------------------------------------------------------
 
 # Variables initialization
-# matrices_dir <- paste0(here(),"/matrices/") # set matrices directory
 matrices_dir <- "matrices/" # set matrices directory
 list_matrices_mtx <- list.files(path = matrices_dir, pattern = ".mtx$") # get list of .mtx files in the directory
 list_matrices <- sub(".mtx$", "", list_matrices_mtx) # get matrices names (for loop purpose)
@@ -80,7 +79,7 @@ for (i in seq_along(list_matrices)) {
   # Matrix Solve Initialization
   A <- get(list_matrices[i]) # get matrix A
   xe <- rep(1, nrow(A)) # calculate vector xe
-  b <- crossprod(A, xe) # calculate b
+  b <- A %*% xe # calculate b
 
   # Cholesky Check (Not-Positive Definite and Symmetric)
   R <- tryCatch({
