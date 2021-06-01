@@ -116,7 +116,7 @@ for (i in seq_along(list_matrices)) {
   cat("\n Peak RAM (MB):", peak_ram_x / (2^20))
   cat("\n Relative Error (norm2):", relative_error)
   cat("\nResults written in", results_solve_csv)
-  rm(list = c("x", "A", "R", "xe", "b", "total_time_x", "relative_error", "tot_ram_x", "peak_ram_x", "row", list_matrices[i]))
+  rm(list = c("x", "A", "R", "xe", "b", "matrix_name", "total_time_x", "relative_error", "tot_ram_x", "peak_ram_x", "row", list_matrices[i]))
   invisible(gc())
 }
 cat("\n==================================================")
