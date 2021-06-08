@@ -11,7 +11,7 @@
 
 suppressMessages({
   chooseCRANmirror(ind = 1) # select "Cloud" mirror
-  packages <- c("here", "bench", "Matrix") # packages to be installed
+  packages <- c("here", "bench", "Matrix", "SparseM") # packages to be installed
   installed_packages <- packages %in% rownames(installed.packages())
   if (any(installed_packages == FALSE)) {
     install.packages(packages[!installed_packages])
@@ -24,7 +24,7 @@ options(warn = -1) # clean output
 #Initializations ---------------------------------------------------------------
 
 # Variables initialization
-matrices_dir <- "matrices/" # set matrices directory
+matrices_dir <- "matrices/final/" # set matrices directory
 list_matrices_mtx <- list.files(path = matrices_dir, pattern = ".mtx$") # get list of .mtx files in the directory
 list_matrices <- sub(".mtx$", "", list_matrices_mtx) # get matrices names (for loop purpose)
 results_read_csv <- file.path("R/results/read.csv") # set results directory and file for read
@@ -81,42 +81,26 @@ for (i in seq_along(list_matrices)) {
   xe <- rep(1, nrow(A)) # calculate vector xe
   b <- A %*% xe # calculate b
 
-  # Cholesky Check (Not-Positive Definite and Symmetric)
-  R <- tryCatch({
-    mark(Cholesky(A)) # calculate cholesky
-    cat("\n Candidate for Cholesky!")
-    }
-    , error = function(e) {
-      cat("\n Not-candidate for Cholesky!")
-  })
-
   # Matrix Solve
-  if (!inherits(R, "error") & !is.null(R)) {
-    x <- mark(solve(R$result[[1]], b), time_unit = "s") # solve Ax=b (Cholesky)
-    time_R <- as.numeric(R$total_time) # R (Cholesky) execution time (s)
-    time_x <- as.numeric(x$total_time) # x execution time (s)
-    total_time_x <- time_R+time_x # total solve execution time (s)
-  } else {
-    x <- mark(solve(A, b), time_unit = "s") # solve Ax=b (LU)
-    total_time_x <- as.numeric(x$total_time) # total solve execution time (s)
-  }
+  x <- mark(solve(A, b, sparse=TRUE, tol=.Machine$double.eps), time_unit = "s") # solve Ax=b (Cholesky or LU)
 
   # Matrix Solve Results
+  time_x <- as.numeric(x$total_time) # x execution time (s)
   relative_error <- norm(x$result[[1]] - xe, "2") / norm(xe, "2") # relative error (norm2)
   peak_ram_x <- as.numeric(max(x$memory[[1]]$bytes)) # x peak ram usage (B)
   tot_ram_x <- as.numeric(sum(x$memory[[1]]$bytes)) # x total ram usage (B)
 
   # Matrix Solve Results in CSV
-  row <- data.frame(list_matrices[i], total_time_x, relative_error, tot_ram_x, peak_ram_x)
+  row <- data.frame(list_matrices[i], time_x, relative_error, tot_ram_x, peak_ram_x)
   write.table(row, results_solve_csv, sep = ",", append = TRUE, quote = FALSE, row.names = FALSE, col.names = FALSE)
   close(file(results_solve_csv)) # close connection
 
   # Console Output (Human Readable Format) and Memory Clean
-  cat("\n Total Execution Time (min):", total_time_x / 60)
+  cat("\n Total Execution Time (min):", time_x / 60)
   cat("\n Peak RAM (MB):", peak_ram_x / (2^20))
   cat("\n Relative Error (norm2):", relative_error)
   cat("\nResults written in", results_solve_csv)
-  rm(list = c("x", "A", "R", "xe", "b", "matrix_name", "total_time_x", "relative_error", "tot_ram_x", "peak_ram_x", "row", list_matrices[i]))
+  rm(list = c("x", "A", "R", "xe", "b", "matrix_name", "time_x", "relative_error", "tot_ram_x", "peak_ram_x", "row", list_matrices[i]))
   invisible(gc())
 }
 cat("\n==================================================")
